@@ -1,4 +1,11 @@
-import { ADD, DIVISION, MULTI, SUB } from "./constants.js";
+import {
+  ADD,
+  CLOSES_BRACKET,
+  DIVISION,
+  MULTI,
+  OPEN_BRACKET,
+  SUB,
+} from "./constants.js";
 import { stringParser } from "./stringParser.js";
 
 function calculateAddAndSub(array) {
@@ -64,6 +71,10 @@ function multi(array, i, multiAndDividResults) {
 }
 
 function division(array, i, multiAndDividResults) {
+  if (array[i + 1] == 0) {
+    const error = new Error("Cannot divide by zero");
+    throw error;
+  }
   if (i === 1 || ![MULTI, DIVISION].includes(array[i - 2])) {
     const divResult = Number(array[i - 1]) / Number(array[i + 1]);
     multiAndDividResults.push(divResult);
@@ -76,7 +87,7 @@ function division(array, i, multiAndDividResults) {
   return multiAndDividResults;
 }
 
-function mainCalculator(array) {
+function methCalculator(array) {
   let result = 0;
   const solveMultiAndDiv = calculateMultiAndDiv(array);
   if (solveMultiAndDiv.includes(ADD) || solveMultiAndDiv.includes(SUB)) {
@@ -87,7 +98,50 @@ function mainCalculator(array) {
   return result;
 }
 
-const array = stringParser("5*5+8");
-const final = mainCalculator(array);
-console.log(final);
-console.log(5 * 5+8);
+function calculateBrackets(array) {
+  const bracketsResult = [];
+  let arrayForCalculate = [];
+  let isBracket = false;
+  for (let i = 0; i < array.length; i++) {
+    if (
+      isBracket === true &&
+      ![OPEN_BRACKET, CLOSES_BRACKET].includes(array[i])
+    ) {
+      arrayForCalculate.push(array[i]);
+    } else if (array[i] === OPEN_BRACKET) {
+      if (isBracket === true) {
+        const error = new Error("Invalid bracket");
+        throw error;
+      }
+      isBracket = true;
+    } else if (array[i] === CLOSES_BRACKET) {
+      if (isBracket === false) {
+        const error = new Error("Invalid bracket");
+        throw error;
+      }
+      isBracket = false;
+      const result = methCalculator(arrayForCalculate);
+      arrayForCalculate = [];
+      bracketsResult.push(result);
+    } else {
+      bracketsResult.push(array[i]);
+    }
+  }
+  if (isBracket === true) {
+    const error = new Error("Invalid bracket");
+    throw error;
+  }
+  return bracketsResult;
+}
+
+export function mainCalculator(string) {
+  try {
+    const array = stringParser(string);
+    const result = calculateBrackets(array);
+    const finalResult = methCalculator(result);
+    return finalResult;
+  } catch (err) {
+    return `Error: ${err.message}`;
+  }
+}
+
